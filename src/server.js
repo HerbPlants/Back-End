@@ -116,9 +116,6 @@ const init = async () => {
 
     return h.continue;
   });
-  console.log('ACCESS_TOKEN_KEY:', process.env.ACCESS_TOKEN_KEY);
-console.log('ACCESS_TOKEN_AGE:', process.env.ACCESS_TOKEN_AGE);
-
   await server.start();
   console.log(`🚀 Server berjalan pada ${server.info.uri}`);
 };
