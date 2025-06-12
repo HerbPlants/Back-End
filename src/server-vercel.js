@@ -1,4 +1,6 @@
 require("dotenv").config();
+const Inert = require("@hapi/inert");
+const path = require("path");
 
 const Hapi = require("@hapi/hapi");
 const Jwt = require("@hapi/jwt");
@@ -7,7 +9,6 @@ const authentications = require("./api/authentication");
 const bestHerb = require("./api/bestHerb");
 const likes = require("./api/likes");
 const predict = require("./api/predictHistory");
-const mission = require("./api/mission");
 
 const ClientError = require("./exceptions/ClientError");
 const UsersService = require("./services/user/userService");
@@ -15,32 +16,29 @@ const AuthenticationsService = require("./services/authentication/authService");
 const BestHerbsService = require("./services/bestHerb/bestHerbService");
 const LikesService = require("./services/likes/likeService");
 const PredictHistoryService = require("./services/predictHistory/predictHistoryService");
-const MissionService = require("./services/mission/missionService");
 
 const TokenManager = require("./lib/tokenManager");
 const validator = require("./lib/validator");
 
-
-const init = async () => {
+const createServer = async () => {
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
   const bestHerbsService = new BestHerbsService();
   const likeService = new LikesService();
   const predictService = new PredictHistoryService();
-  const missionService = new MissionService();
 
   const server = Hapi.server({
     port: process.env.PORT || 5000,
-    // host: process.env.HOST || "0.0.0.0",
+    host: process.env.HOST || "0.0.0.0",
     routes: {
       cors: {
-        origin: ["https://herb-plants.vercel.app", "http://localhost:3000"],
-        // additionalHeaders: ['authorization', 'content-type'],
-        // credentials: true,
+        origin: ["*"],
+        credentials: true,
       },
     },
   });
 
+  await server.register(Inert);
 
   await server.register([
     {
@@ -110,14 +108,22 @@ const init = async () => {
         validator: validator,
       },
     },
-    {
-      plugin: mission,
-      options: {
-        service: missionService,
-        validator: validator,
+  ]);
+
+  server.route({
+    method: "GET",
+    path: "/predict/{param*}",
+    handler: {
+      directory: {
+        path: path.join(__dirname, "public/predict"),
+        listing: false,
+        index: false,
       },
     },
-  ]);
+    options: {
+      auth: false,
+    },
+  });
 
   server.route({
     method: "GET",
@@ -180,9 +186,8 @@ const init = async () => {
     return h.continue;
   });
 
-  // require("./lib/missionScheduler");
-  await server.start();
-  console.log(`🚀 Server berjalan pada ${server.info.uri}`);
+  return server;
+  // console.log(`🚀 Server berjalan pada ${server.info.uri}`);
 };
 
-init();
+module.exports = createServer;

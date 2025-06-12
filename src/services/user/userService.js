@@ -36,7 +36,7 @@ class UsersService {
   async verifyUserCredential(username, password) {
     const user = await prisma.users.findUnique({
       where: { username },
-      select: { uuid: true, password: true },
+      select: { uuid: true, password: true, full_name: true },
     });
 
     if (!user) {
@@ -49,7 +49,7 @@ class UsersService {
       throw new AuthenticationError("Username atau Password Salah");
     }
 
-    return user.uuid;
+    return {uuid : user.uuid, fullName : user.full_name};
   }
 }
 

@@ -13,7 +13,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  schemas    = ["user", "auth"]
+  schemas    = ["user", "auth", "herb", "challage"]
   extensions = [uuidOssp(map: "uuid-ossp")]
 }
 
@@ -26,14 +26,167 @@ model users {
   email     String @db.VarChar(255)
 
   authentication authentication? @relation
+  Like           Like[]
+
+  
+  PredictionHistory PredictionHistory[]
+  UserMission UserMission[]
+  PointHistory PointHistory[]
 
   @@schema("user")
 }
 
 model authentication {
-  token      String @unique
-  uuid_user  String @unique
-  user       users  @relation(fields: [uuid_user], references: [uuid])
+  token     String @unique
+  uuid_user String @unique
+  user      users  @relation(fields: [uuid_user], references: [uuid])
 
   @@schema("auth")
+}
+
+model Herb {
+  id                Int      @id @default(autoincrement())
+  name              String   @unique
+  nameLatin         String
+  nameLocal         String
+  khasiat           String
+  penyebaranTanaman String
+  agroekologi       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  BestHerb BestHerb?
+  Like     Like[]
+
+  @@schema("herb")
+  PredictionHistory PredictionHistory[]
+}
+
+model BestHerb {
+  id     Int  @id @default(autoincrement())
+  herbId Int  @unique
+  herb   Herb @relation(fields: [herbId], references: [id])
+  image String?
+
+  name    String
+  khasiat String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("herb")
+}
+
+model Like {
+  id       Int    @id @default(autoincrement())
+  userUuid String
+  herbId   Int
+  imageUrl    String   @db.VarChar(512)
+
+  user users @relation(fields: [userUuid], references: [uuid])
+  herb Herb  @relation(fields: [herbId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userUuid, herbId])
+  @@schema("herb")
+}
+
+model PredictionHistory {
+  id       Int    @id @default(autoincrement())
+  userUuid String
+  herbId   Int
+  imageUrl    String   @db.VarChar(512)
+  confidence  Float?
+  predictedAt DateTime @default(now())
+
+  user users @relation(fields: [userUuid], references: [uuid])
+  herb Herb  @relation(fields: [herbId], references: [id])
+
+  @@schema("herb")
+}
+
+model Mission {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  type        MissionType
+  total       Int
+  pointReward Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  userMissions UserMission[]
+
+   rotationsAsMissionOne   DailyMissionRotation[] @relation("MissionOne")
+  rotationsAsMissionTwo   DailyMissionRotation[] @relation("MissionTwo")
+  rotationsAsMissionThree DailyMissionRotation[] @relation("MissionThree")
+
+  @@schema("challage")
+}
+
+enum MissionType {
+  daily
+  exclusive
+
+  @@schema("challage")
+}
+
+model UserMission {
+  id        String   @id @default(uuid())
+  userUuid  String
+  missionId String
+
+  current   Int      @default(0)
+  completed Boolean  @default(false)
+  completedAt DateTime?
+
+  user    users   @relation(fields: [userUuid], references: [uuid])
+  mission Mission @relation(fields: [missionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userUuid, missionId])
+  @@schema("challage")
+}
+
+model DailyMissionRotation {
+  id        String   @id @default(uuid())
+  date      DateTime @unique
+
+  mission1  String
+  mission2  String
+  mission3  String
+
+  missionOne   Mission @relation("MissionOne", fields: [mission1], references: [id])
+  missionTwo   Mission @relation("MissionTwo", fields: [mission2], references: [id])
+  missionThree Mission @relation("MissionThree", fields: [mission3], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@schema("challage")
+}
+
+model PointHistory {
+  id        String   @id @default(uuid())
+  userUuid  String
+  change    Int      
+  reason    String   
+  source    PointSource
+  relatedId String?   
+  createdAt DateTime  @default(now())
+
+  user users @relation(fields: [userUuid], references: [uuid])
+
+  @@schema("challage")
+}
+
+enum PointSource {
+  mission
+  redeem
+  admin
+  event
+
+  @@schema("challage")
 }
