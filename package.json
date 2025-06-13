@@ -7,7 +7,8 @@
     "start": "cross-env NODE_ENV=production node ./src/server.js",
     "dev": "nodemon ./src/server.js",
     "lint": "eslint ./src",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "input-db" : "node ./data-db/seed.js"
   },
   "author": "zidan",
   "license": "ISC",
